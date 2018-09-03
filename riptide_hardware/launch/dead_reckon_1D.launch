@@ -1,3 +1,6 @@
 <launch>
+  <include file="$(find riptide_hardware)/launch/imu.launch" >
+    <arg name="device" value="/dev/imu_rear" />
+  </include>
   <node pkg="riptide_hardware" type="dead_reckon_1D" name="dead_reckon_1D" output="screen" />
 </launch>

@@ -4,7 +4,7 @@
     <arg name="location" default="hotel"/>
     <arg name="device" default="/dev/imu_front" />
     <arg name="mag_LPF_bandwidth" default="15" />
-    <arg name="accel_LPF_bandwidth" default="50" />
+    <arg name="accel_LPF_bandwidth" default="20" />
     <arg name="gyro_LPF_bandwidth" default="50" />
     <arg name="enable_iron_offset" default="false" />
     <arg name="post_IIR_LPF_bandwidth" default="17" />

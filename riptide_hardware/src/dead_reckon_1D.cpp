@@ -13,13 +13,13 @@ int main(int argc, char **argv)
 //Constructor
 DeadReckon1D::DeadReckon1D() : nh("dead_reckon_1D")
 {
-  imu_sub = nh.subscribe<riptide_msgs::Imu>("/state/imu", 1, &DeadReckon1D::ImuCB, this);
-  imu_filter_sub = nh.subscribe<imu_3dm_gx4::FilterOutput>("/imu/filter", 1, &DeadReckon1D::FilterCallback, this);
+  imu_sub = nh.subscribe<imu_3dm_gx4::FilterOutput>("/imu/filter", 1, &DeadReckon1D::ImuCB, this);
+  //imu_filter_sub = nh.subscribe<imu_3dm_gx4::FilterOutput>("/imu/filter", 1, &DeadReckon1D::FilterCallback, this);
 
   initKF = false;
-  initPP = false;
+  init = false;
   tLastKF = 0;
-  tLastPP = 0;
+  tStart = 0;
   deltaT = 0.01;
   count = 0;
   minCount = 5; // Need 3 data points accel to get vel, need 3 calculated vel's to get pos (requires 5 accel data points)
@@ -28,30 +28,30 @@ DeadReckon1D::DeadReckon1D() : nh("dead_reckon_1D")
   for (int i = 0; i < minCount; i++)
   {
     aXInitKF[i] = 0;
-    aXInitPP[i] = 0;
+    aXInit[i] = 0;
     aYInitKF[i] = 0;
-    aYInitPP[i] = 0;
+    aYInit[i] = 0;
   }
 
   //Create a new file for logging IMU data
   bool found_new_file_name = false;
-  int num = 1; //Begin file counting here
-  sprintf(file_name_KF, "//home//tsender//osu-uwrt//DR_1DKF_%i.csv", num);
-  sprintf(file_name_PP, "//home//tsender//osu-uwrt//DR_1DPP_%i.csv", num);
+  num = 1; //Begin file counting here
+  //sprintf(file_name_KF, "//home//tsender//osu-uwrt//DR_1DKF_%i.csv", num);
+  sprintf(file_name, "//home//tsender//osu-uwrt//DR_1D_%i.csv", num);
 
   //If unable to open for reading, then the file does not exist --> new file_name
   while (!found_new_file_name)
   {
-    ROS_INFO("Dead Reckon 1D KF File Name: ");
-    ROS_INFO("\t%s", file_name_KF);
-    fid = fopen(file_name_KF, "r");
+    ROS_INFO("Dead Reckon 1D File Name: ");
+    ROS_INFO("\t%s", file_name);
+    fid = fopen(file_name, "r");
     if (fid)
     { //File already exists
       //Increase num, and create new file name
       fclose(fid);
       num++;
-      sprintf(file_name_KF, "//home//tsender//osu-uwrt//DR_1DKF_%i.csv", num);
-      sprintf(file_name_PP, "//home//tsender//osu-uwrt//DR_1DPP_%i.csv", num);
+      //sprintf(file_name_KF, "//home//tsender//osu-uwrt//DR_1DKF_%i.csv", num);
+      sprintf(file_name, "//home//tsender//osu-uwrt//DR_1D_%i.csv", num);
     }
     else
     { //File does not exist
@@ -61,95 +61,94 @@ DeadReckon1D::DeadReckon1D() : nh("dead_reckon_1D")
 }
 
 //Log magnetometer vector components
-void DeadReckon1D::ImuCB(const riptide_msgs::Imu::ConstPtr &imu)
+void DeadReckon1D::ImuCB(const imu_3dm_gx4::FilterOutput::ConstPtr &imu)
 {
   //Open file and print values
-  fid = fopen(file_name_PP, "a"); //Open file for "appending"
+  fid = fopen(file_name, "a"); //Open file for "aending"
   if (!fid)
   {
-    ROS_INFO("DeadReckon_1DPP: file not opened");
+    ROS_INFO("DeadReckon_1D: file not opened");
   }
 
-  if (!initPP)
+  if (!init)
   {
-    aXInitPP[count] = imu->linear_accel.x;
-    aYInitPP[count] = imu->linear_accel.y;
+    aXInit[count] = imu->linear_acceleration.x;
+    aYInit[count] = imu->linear_acceleration.y;
     count++;
 
     if (count == minCount)
     {
-      lastAccelPP.x = imu->linear_accel.x;
-      lastAccelPP.y = imu->linear_accel.y;
+      lastAccel.x = imu->linear_acceleration.x;
+      lastAccel.y = imu->linear_acceleration.y;
 
       // Calculate initial 3 velocities
-      vXInitPP[0] = deltaT / 2 * (aXInitPP[0] + 2 * aXInitPP[1] + aXInitPP[2]);
-      vXInitPP[1] = vXInitPP[0] + deltaT / 2 * (aXInitPP[2] + aXInitPP[3]);
-      vXInitPP[2] = vXInitPP[1] + deltaT / 2 * (aXInitPP[3] + aXInitPP[4]);
-      velPP.x = vXInitPP[2];
-      lastVelPP.x = velPP.x;
+      vXInit[0] = deltaT / 2 * (aXInit[0] + 2 * aXInit[1] + aXInit[2]);
+      vXInit[1] = vXInit[0] + deltaT / 2 * (aXInit[2] + aXInit[3]);
+      vXInit[2] = vXInit[1] + deltaT / 2 * (aXInit[3] + aXInit[4]);
+      vel.x = vXInit[2];
+      lastVel.x = vel.x;
 
-      vYInitPP[0] = deltaT / 2 * (aYInitPP[0] + 2 * aYInitPP[1] + aYInitPP[2]);
-      vYInitPP[1] = vYInitPP[0] + deltaT / 2 * (aYInitPP[2] + aYInitPP[3]);
-      vYInitPP[2] = vYInitPP[1] + deltaT / 2 * (aYInitPP[3] + aYInitPP[4]);
-      velPP.y = vYInitPP[2];
-      lastVelPP.y = velPP.y;
-      lastVelPP.z = 0;
+      vYInit[0] = deltaT / 2 * (aYInit[0] + 2 * aYInit[1] + aYInit[2]);
+      vYInit[1] = vYInit[0] + deltaT / 2 * (aYInit[2] + aYInit[3]);
+      vYInit[2] = vYInit[1] + deltaT / 2 * (aYInit[3] + aYInit[4]);
+      vel.y = vYInit[2];
+      lastVel.y = vel.y;
+      lastVel.z = 0;
 
       // Calculate initial positions
-      posPP.x = deltaT / 2 * (vXInitPP[0] + 2 * vXInitPP[1] + vXInitPP[2]);
-      posPP.y = deltaT / 2 * (vYInitPP[0] + 2 * vYInitPP[1] + vYInitPP[2]);
-      posPP.z = 0;
+      pos.x = deltaT / 2 * (vXInit[0] + 2 * vXInit[1] + vXInit[2]);
+      pos.y = deltaT / 2 * (vYInit[0] + 2 * vYInit[1] + vYInit[2]);
+      pos.z = 0;
 
-      // Write first values to post-processed (PP) file
+      // Write first values to post-processed () file
       fprintf(fid, "%f,", 0.0);
-      fprintf(fid, "%f,", lastAccelPP.x);
-      fprintf(fid, "%f,", velPP.x);
-      fprintf(fid, "%f,", posPP.x);
-      fprintf(fid, "%f,", lastAccelPP.y);
-      fprintf(fid, "%f,", velPP.y);
-      fprintf(fid, "%f\n", posPP.y);
+      fprintf(fid, "%f,", lastAccel.x);
+      fprintf(fid, "%f,", vel.x);
+      fprintf(fid, "%f,", pos.x);
+      fprintf(fid, "%f,", lastAccel.y);
+      fprintf(fid, "%f,", vel.y);
+      fprintf(fid, "%f\n", pos.y);
       fclose(fid);
 
-      tLastPP = imu->header.stamp.toSec();
-      initPP = true;
+      tStart = imu->header.stamp.toSec();
+      init = true;
 
-      ROS_INFO("PP: pos.x = %f", posPP.x);
+      ROS_INFO("pos.x = %f", pos.x);
     }
   }
   else
   {
     // Get newest accel's
-    double ax = imu->linear_accel.x;
-    double ay = imu->linear_accel.y;
+    accel.x = imu->linear_acceleration.x;
+    accel.y = imu->linear_acceleration.y;
 
     // Calculate new velocities and positions
-    velPP.x += deltaT / 2 * (lastAccelPP.x + ax);
-    velPP.y += deltaT / 2 * (lastAccelPP.y + ay);
+    vel.x += deltaT / 2 * (lastAccel.x + accel.x);
+    vel.y += deltaT / 2 * (lastAccel.y + accel.y);
 
-    posPP.x += deltaT / 2 * (lastVelPP.x + velPP.x);
-    posPP.y += deltaT / 2 * (lastVelPP.y + velPP.y);
+    pos.x += deltaT / 2 * (lastVel.x + vel.x);
+    pos.y += deltaT / 2 * (lastVel.y + vel.y);
 
     // Update last variables
-    lastAccelPP.x = ax;
-    lastAccelPP.y = ay;
-    lastVelPP.x = velPP.x;
-    lastVelPP.y = velPP.y;
+    lastAccel.x = accel.x;
+    lastAccel.y = accel.y;
+    lastVel.x = vel.x;
+    lastVel.y = vel.y;
 
-    // Write values to PP file
-    fprintf(fid, "%f,", imu->header.stamp.toSec() - tLastPP);
-    fprintf(fid, "%f,", aXInitPP[count]);
-    fprintf(fid, "%f,", velPP.x);
-    fprintf(fid, "%f,", posPP.x);
-    fprintf(fid, "%f,", aYInitPP[count]);
-    fprintf(fid, "%f,", velPP.y);
-    fprintf(fid, "%f\n", posPP.y);
+    // Write values to  file
+    fprintf(fid, "%f,", imu->header.stamp.toSec() - tStart);
+    fprintf(fid, "%f,", accel.x);
+    fprintf(fid, "%f,", vel.x);
+    fprintf(fid, "%f,", pos.x);
+    fprintf(fid, "%f,", accel.y);
+    fprintf(fid, "%f,", vel.y);
+    fprintf(fid, "%f\n", pos.y);
     fclose(fid);
 
-    tLastPP = imu->header.stamp.toSec();
-    ROS_INFO("PP: pos.x = %f", posPP.x);
+    ROS_INFO("File %i, t=%.5f: Ax=%.5f, Vx=%.5f, Px=%.5f", num, imu->header.stamp.toSec() - tStart, accel.x, vel.x, pos.x);
   }
 }
 
-void DeadReckon1D::FilterCallback(const imu_3dm_gx4::FilterOutput::ConstPtr &filter_msg)
+/*void DeadReckon1D::FilterCallback(const imu_3dm_gx4::FilterOutput::ConstPtr &filter_msg)
 {
-}
+}*/

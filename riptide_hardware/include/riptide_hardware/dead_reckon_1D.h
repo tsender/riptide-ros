@@ -37,34 +37,35 @@
 #include "stdio.h"
 #include "string"
 #include "fstream"
-#include <boost/lexical_cast.hpp>
+//#include <boost/lexical_cast.h>
 using namespace std;
 
 class DeadReckon1D
 {
 private:
   // KF = pre-processed (direct Kalman filter output, with IIR influencing)
-  // PP = post-processed (further IIR LPF on Kalman filter output)
+  //  = post-processed (further IIR LPF on Kalman filter output)
   
   ros::NodeHandle nh;
-  ros::Subscriber imu_sub, imu_filter_sub;
+  ros::Subscriber imu_sub; //imu_filter_sub;
   
   FILE *fid;
-  char file_name_KF[100], file_name_PP[100];
-  double tLastKF, tLastPP, deltaT;
-  bool initKF, initPP;
+  int num;
+  char file_name_KF[100], file_name[100];
+  double tLastKF, tStart, deltaT;
+  bool initKF, init;
 
   int count, minCount;
-  double aXInitKF[5], aYInitKF[5], aXInitPP[5], aYInitPP[5];
-  double vXInitKF[3], vYInitKF[3], vXInitPP[3], vYInitPP[3];
-  geometry_msgs::Vector3 lastAccelKF, lastAccelPP, lastVelKF, lastVelPP;
-  geometry_msgs::Vector3 velKF, velPP, posKF, posPP;
+  double aXInitKF[5], aYInitKF[5], aXInit[5], aYInit[5];
+  double vXInitKF[3], vYInitKF[3], vXInit[3], vYInit[3];
+  geometry_msgs::Vector3 lastAccelKF, lastAccel, lastVelKF, lastVel;
+  geometry_msgs::Vector3 accel, velKF, vel, posKF, pos;
 
 public:
   DeadReckon1D();
   void InitMsgs();
-  void ImuCB(const riptide_msgs::Imu::ConstPtr& imu);
-  void FilterCallback(const imu_3dm_gx4::FilterOutput::ConstPtr& filter_msg);
+  void ImuCB(const imu_3dm_gx4::FilterOutput::ConstPtr& imu);
+  //void FilterCallback(const imu_3dm_gx4::FilterOutput::ConstPtr& filter_msg);
 };
 
 #endif

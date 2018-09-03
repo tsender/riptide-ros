@@ -44,9 +44,9 @@ message("-- Computer name: " ${_host_name})
 
 if(NOT _host_name MATCHES "jetson")
 
-    add_executable(imu_logger src/imu_logger.cpp)
-    target_link_libraries(imu_logger ${catkin_LIBRARIES})
-    add_dependencies(imu_logger ${catkin_EXPORTED_TARGETS})
+    add_executable(dead_reckon_1D src/dead_reckon_1D.cpp)
+    target_link_libraries(dead_reckon_1D ${catkin_LIBRARIES})
+    add_dependencies(dead_reckon_1D ${catkin_EXPORTED_TARGETS})
 
     add_executable(depth_processor src/depth_processor.cpp)
     target_link_libraries(depth_processor ${catkin_LIBRARIES})

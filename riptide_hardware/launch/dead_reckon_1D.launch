@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="riptide_hardware" type="dead_reckon_1D" name="dead_reckon_1D" output="screen" />
+</launch>

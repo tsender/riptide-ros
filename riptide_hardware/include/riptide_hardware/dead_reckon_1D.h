@@ -33,6 +33,7 @@
 #include "imu_3dm_gx4/FilterOutput.h"
 #include "std_msgs/Header.h"
 #include "geometry_msgs/Vector3.h"
+#include "sensor_msgs/Imu.h"
 #include "math.h"
 #include "stdio.h"
 #include "string"
@@ -43,11 +44,8 @@ using namespace std;
 class DeadReckon1D
 {
 private:
-  // KF = pre-processed (direct Kalman filter output, with IIR influencing)
-  //  = post-processed (further IIR LPF on Kalman filter output)
-  
   ros::NodeHandle nh;
-  ros::Subscriber imu_sub; //imu_filter_sub;
+  ros::Subscriber imu_sub, imu_filter_sub;
   
   FILE *fid;
   int num;
@@ -60,12 +58,14 @@ private:
   double vXInitKF[3], vYInitKF[3], vXInit[3], vYInit[3];
   geometry_msgs::Vector3 lastAccelKF, lastAccel, lastVelKF, lastVel;
   geometry_msgs::Vector3 accel, velKF, vel, posKF, pos;
+  sensor_msgs::Imu raw_imu;
 
 public:
   DeadReckon1D();
+  ~DeadReckon1D();
   void InitMsgs();
-  void ImuCB(const imu_3dm_gx4::FilterOutput::ConstPtr& imu);
-  //void FilterCallback(const imu_3dm_gx4::FilterOutput::ConstPtr& filter_msg);
+  void IMUCB(const sensor_msgs::Imu::ConstPtr& imu);
+  void IMUFilterCB(const imu_3dm_gx4::FilterOutput::ConstPtr& imu);
 };
 
 #endif

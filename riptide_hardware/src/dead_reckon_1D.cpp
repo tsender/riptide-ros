@@ -13,8 +13,8 @@ int main(int argc, char **argv)
 //Constructor
 DeadReckon1D::DeadReckon1D() : nh("dead_reckon_1D")
 {
-  imu_sub = nh.subscribe<imu_3dm_gx4::FilterOutput>("/imu/filter", 1, &DeadReckon1D::ImuCB, this);
-  //imu_filter_sub = nh.subscribe<imu_3dm_gx4::FilterOutput>("/imu/filter", 1, &DeadReckon1D::FilterCallback, this);
+  imu_sub = nh.subscribe<sensor_msgs::Imu>("/imu/imu", 1, &DeadReckon1D::IMUCB, this);
+  imu_filter_sub = nh.subscribe<imu_3dm_gx4::FilterOutput>("/imu/filter", 1, &DeadReckon1D::IMUFilterCB, this);
 
   initKF = false;
   init = false;
@@ -60,11 +60,16 @@ DeadReckon1D::DeadReckon1D() : nh("dead_reckon_1D")
   }
 }
 
-//Log magnetometer vector components
-void DeadReckon1D::ImuCB(const imu_3dm_gx4::FilterOutput::ConstPtr &imu)
+DeadReckon1D::~DeadReckon1D()
 {
+  printf("Wrote IMU Data to file: %s", file_name);
+}
+
+//Log magnetometer vector components
+void DeadReckon1D::IMUFilterCB(const imu_3dm_gx4::FilterOutput::ConstPtr &imu)
+{/*
   //Open file and print values
-  fid = fopen(file_name, "a"); //Open file for "aending"
+  fid = fopen(file_name, "a"); //Open file for "apending"
   if (!fid)
   {
     ROS_INFO("DeadReckon_1D: file not opened");
@@ -146,9 +151,41 @@ void DeadReckon1D::ImuCB(const imu_3dm_gx4::FilterOutput::ConstPtr &imu)
     fclose(fid);
 
     ROS_INFO("File %i, t=%.5f: Ax=%.5f, Vx=%.5f, Px=%.5f", num, imu->header.stamp.toSec() - tStart, accel.x, vel.x, pos.x);
-  }
+  }*/
 }
 
-/*void DeadReckon1D::FilterCallback(const imu_3dm_gx4::FilterOutput::ConstPtr &filter_msg)
+void DeadReckon1D::IMUCB(const sensor_msgs::Imu::ConstPtr &imu)
 {
-}*/
+  //Open file and print values
+  fid = fopen(file_name, "a"); //Open file for "apending"
+  if (!fid)
+  {
+    ROS_INFO("DeadReckon_1D: file not opened");
+  }
+
+  if(!init)
+  {
+    fprintf(fid, "Timestamp [s], Ax [m/s^2], Ay [m/s^2],  Az [m/s^2], wX [rad/s], wY [rad/s], wZ [rad/s]\n");
+    fprintf(fid, "%f,", tStart);
+    fprintf(fid, "%f,", imu->linear_acceleration.x);
+    fprintf(fid, "%f,", imu->linear_acceleration.y);
+    fprintf(fid, "%f,", imu->linear_acceleration.z);
+    fprintf(fid, "%f,", imu->angular_velocity.x);
+    fprintf(fid, "%f,", imu->angular_velocity.y);
+    fprintf(fid, "%f\n", imu->angular_velocity.z);
+    fclose(fid);
+    tStart = imu->header.stamp.toSec();
+    init = true;
+  }
+  else
+  {
+    fprintf(fid, "%f,", imu->header.stamp.toSec() - tStart);
+    fprintf(fid, "%f,", imu->linear_acceleration.x);
+    fprintf(fid, "%f,", imu->linear_acceleration.y);
+    fprintf(fid, "%f,", imu->linear_acceleration.z);
+    fprintf(fid, "%f,", imu->angular_velocity.x);
+    fprintf(fid, "%f,", imu->angular_velocity.y);
+    fprintf(fid, "%f\n", imu->angular_velocity.z);
+    fclose(fid);
+  }
+}

@@ -367,9 +367,9 @@ int main(int argc, char **argv) {
     ROS_INFO("\tManual Dec (deg): %f", manualDeclination*180/PI);
 
     ROS_INFO("Sensor LPF Bandwidths");
-    imu.setLPFBandwidth("mag", "IIR", "manual", magLPFBandwidth3DM);
-    imu.setLPFBandwidth("accel", "IIR", "manual", accelLPFBandwidth3DM);
-    imu.setLPFBandwidth("gyro", "IIR", "manual", gyroLPFBandwidth3DM);
+    imu.setLPFBandwidth("mag", "none", "manual", magLPFBandwidth3DM);
+    imu.setLPFBandwidth("accel", "none", "manual", accelLPFBandwidth3DM);
+    imu.setLPFBandwidth("gyro", "none", "manual", gyroLPFBandwidth3DM);
     ROS_INFO("\tMag LPF (Hz): %i", magLPFBandwidth3DM);
     ROS_INFO("\tAccel LPF (Hz): %i", accelLPFBandwidth3DM);
     ROS_INFO("\tGyro LPF (Hz): %i", gyroLPFBandwidth3DM);

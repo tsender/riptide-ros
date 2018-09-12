@@ -52,6 +52,7 @@ private:
   char file_name_KF[100], file_name[100];
   double tLastKF, tStart, deltaT;
   bool initKF, init;
+  string username;
 
   int count, minCount;
   double aXInitKF[5], aYInitKF[5], aXInit[5], aYInit[5];
@@ -63,7 +64,8 @@ private:
 public:
   DeadReckon1D();
   ~DeadReckon1D();
-  void InitMsgs();
+  template <typename T>
+  void LoadParam(string param, T &var);
   void IMUCB(const sensor_msgs::Imu::ConstPtr& imu);
   void IMUFilterCB(const imu_3dm_gx4::FilterOutput::ConstPtr& imu);
 };

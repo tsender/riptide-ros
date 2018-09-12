@@ -1,6 +1,11 @@
 <launch>
+  <arg name="username" default="tsender" />
+  
   <include file="$(find riptide_hardware)/launch/imu.launch" >
     <arg name="device" value="/dev/imu_rear" />
   </include>
-  <node pkg="riptide_hardware" type="dead_reckon_1D" name="dead_reckon_1D" output="screen" />
+
+  <node pkg="riptide_hardware" type="dead_reckon_1D" name="dead_reckon_1D" output="screen" >
+    <param name="username" type="string" value="$(arg username)" />
+  </node>
 </launch>

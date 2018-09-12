@@ -16,6 +16,8 @@ DeadReckon1D::DeadReckon1D() : nh("dead_reckon_1D")
   imu_sub = nh.subscribe<sensor_msgs::Imu>("/imu/imu", 1, &DeadReckon1D::IMUCB, this);
   imu_filter_sub = nh.subscribe<imu_3dm_gx4::FilterOutput>("/imu/filter", 1, &DeadReckon1D::IMUFilterCB, this);
 
+  DeadReckon1D::LoadParam<string>("username", username);
+
   initKF = false;
   init = false;
   tLastKF = 0;
@@ -37,7 +39,7 @@ DeadReckon1D::DeadReckon1D() : nh("dead_reckon_1D")
   bool found_new_file_name = false;
   num = 1; //Begin file counting here
   //sprintf(file_name_KF, "//home//tsender//osu-uwrt//DR_1DKF_%i.csv", num);
-  sprintf(file_name, "//home//tsender//osu-uwrt//DR_1D_%i.csv", num);
+  sprintf(file_name, "//home//%s//osu-uwrt//DR_1D_%i.csv", username.c_str(), num);
 
   //If unable to open for reading, then the file does not exist --> new file_name
   while (!found_new_file_name)
@@ -51,7 +53,7 @@ DeadReckon1D::DeadReckon1D() : nh("dead_reckon_1D")
       fclose(fid);
       num++;
       //sprintf(file_name_KF, "//home//tsender//osu-uwrt//DR_1DKF_%i.csv", num);
-      sprintf(file_name, "//home//tsender//osu-uwrt//DR_1D_%i.csv", num);
+      sprintf(file_name, "//home//%s//osu-uwrt//DR_1D_%i.csv", username.c_str(), num);
     }
     else
     { //File does not exist
@@ -63,6 +65,26 @@ DeadReckon1D::DeadReckon1D() : nh("dead_reckon_1D")
 DeadReckon1D::~DeadReckon1D()
 {
   printf("Wrote IMU Data to file: %s", file_name);
+}
+
+// Load parameter from namespace
+template <typename T>
+void DeadReckon1D::LoadParam(string param, T &var)
+{
+  try
+  {
+    if (!nh.getParam(param, var))
+    {
+      throw 0;
+    }
+  }
+  catch(int e)
+  {
+    string ns = nh.getNamespace();
+    ROS_ERROR("Dead Reckon 1D Namespace: %s", ns.c_str());
+    ROS_ERROR("Critical! Param \"%s/%s\" does not exist or is not accessed correctly. Shutting down.", ns.c_str(), param.c_str());
+    ros::shutdown();
+  }
 }
 
 //Log magnetometer vector components

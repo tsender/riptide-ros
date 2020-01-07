@@ -98,8 +98,8 @@ constraints: # Note: Some constraints are for trajectory limits
   max_velocity:
   {
     x: 0.75, # [m/s]
-    y: 0.4, # [m/s]
-    z: 0.3, # [m/s]
+    y: 0.5, # [m/s]
+    z: 0.5, # [m/s]
     rot: 1.57 # [rad/s]
   },
   max_accel:
@@ -135,7 +135,7 @@ LQR:
   #   3. R_diag MUST have 8 elements
   # 4. Q_diag_integral MUST be filled in, even if you don't plan on using it
   enable_integrator: false,
-  Q_diag: [400.0, 400.0, 400.0, 100.0, 100.0, 100.0, 1000.0, 1000.0, 1000.0, 100.0, 100.0, 100.0],
+  Q_diag: [400.0, 400.0, 400.0, 100.0, 100.0, 100.0, 500.0, 500.0, 500.0, 100.0, 100.0, 100.0],
   Q_diag_integrator: [400.0, 400.0, 400.0, 500.0, 500.0, 500.0],
   R_diag: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
 }
